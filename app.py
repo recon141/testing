@@ -1,4 +1,3 @@
-)
 
 # 버튼을 누르면 환영 문구와 폭죽 애니메이션을 표시합니다.
 if "entered" not in st.session_state:
