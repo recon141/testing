@@ -1,121 +1,108 @@
+                function resizeCanvas() {
+                    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                    const width = canvas.clientWidth;
+                    const height = canvas.clientHeight;
 
-# 버튼을 누르면 환영 문구와 폭죽 애니메이션을 표시합니다.
-if "entered" not in st.session_state:
-    st.session_state.entered = False
+                    canvas.width = width * dpr;
+                    canvas.height = height * dpr;
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                }
 
-_, center_col, _ = st.columns([1, 1.2, 1])
-with center_col:
-    if st.button("들어가기", use_container_width=True):
-        st.session_state.entered = True
+                resizeCanvas();
+                window.addEventListener("resize", resizeCanvas);
 
-if st.session_state.entered:
-    st.markdown(
-        """
-        <h1 style="
-            color:#111111;
-            text-align:center;
-            font-size:clamp(2.2rem, 6vw, 3.8rem);
-            font-weight:800;
-            letter-spacing:-0.05em;
-            margin-top:2.5rem;
-            ">
-            환영합니다!
-        </h1>
-        """,
-        unsafe_allow_html=True,
-    )
+                const particles = [];
+                const colors = ["#111111", "#444444", "#777777", "#aaaaaa"];
 
-    components.html(
-        """
-        <div style="width:100%; height:390px; position:relative; overflow:hidden;
-                    background:#ffffff;">
-          <canvas id="fireworks" style="width:100%;height:100%;display:block;"></canvas>
-        </div>
-        <script>
-        (() => {
-          const canvas = document.getElementById("fireworks");
-          const ctx = canvas.getContext("2d");
-          const resize = () => {
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
-            canvas.width = canvas.clientWidth * dpr;
-            canvas.height = canvas.clientHeight * dpr;
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-          };
-          resize();
+                function random(min, max) {
+                    return Math.random() * (max - min) + min;
+                }
 
-          const colors = ["#111111", "#555555", "#888888", "#b0b0b0"];
-          const particles = [];
-          const bursts = [];
-          const random = (min, max) => Math.random() * (max - min) + min;
+                function createFirework(x, y) {
+                    const color = colors[
+                        Math.floor(Math.random() * colors.length)
+                    ];
+                    const particleCount = 65;
 
-          function burst(x, y) {
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            const count = 65;
-            for (let i = 0; i < count; i++) {
-              const angle = (Math.PI * 2 * i) / count + random(-0.08, 0.08);
-              const speed = random(1.2, 4.2);
-              particles.push({
-                x, y,
-                vx: Math.cos(angle) * speed,
-                vy: Math.sin(angle) * speed,
-                life: random(55, 95),
-                maxLife: 95,
-                radius: random(1.2, 2.7),
-                color
-              });
-            }
-          }
+                    for (let i = 0; i < particleCount; i++) {
+                        const angle = (Math.PI * 2 * i) / particleCount;
+                        const speed = random(1.2, 4.2);
 
-          function launch() {
-            const w = canvas.clientWidth;
-            const h = canvas.clientHeight;
-            burst(random(w * 0.16, w * 0.84), random(h * 0.16, h * 0.58));
-          }
+                        particles.push({
+                            x: x,
+                            y: y,
+                            vx: Math.cos(angle) * speed,
+                            vy: Math.sin(angle) * speed,
+                            life: random(55, 90),
+                            maxLife: 90,
+                            radius: random(1.2, 2.5),
+                            color: color
+                        });
+                    }
+                }
 
-          // 첫 화면에서 여러 차례 폭죽이 터지도록 예약합니다.
-          launch();
-          setTimeout(launch, 350);
-          setTimeout(launch, 750);
-          setTimeout(launch, 1200);
-          setTimeout(launch, 1750);
-          setTimeout(launch, 2350);
+                function launchRandomFirework() {
+                    const width = canvas.clientWidth;
+                    const height = canvas.clientHeight;
 
-          let frame = 0;
-          function animate() {
-            const w = canvas.clientWidth;
-            const h = canvas.clientHeight;
-            ctx.clearRect(0, 0, w, h);
+                    createFirework(
+                        random(width * 0.15, width * 0.85),
+                        random(height * 0.15, height * 0.6)
+                    );
+                }
 
-            for (let i = particles.length - 1; i >= 0; i--) {
-              const p = particles[i];
-              p.x += p.vx;
-              p.y += p.vy;
-              p.vy += 0.025;
-              p.vx *= 0.992;
-              p.vy *= 0.992;
-              p.life--;
+                // 처음에 여러 폭죽을 연속으로 터뜨립니다.
+                launchRandomFirework();
+                setTimeout(launchRandomFirework, 300);
+                setTimeout(launchRandomFirework, 650);
+                setTimeout(launchRandomFirework, 1000);
+                setTimeout(launchRandomFirework, 1400);
+                setTimeout(launchRandomFirework, 1850);
 
-              const alpha = Math.max(0, p.life / p.maxLife);
-              ctx.globalAlpha = alpha;
-              ctx.fillStyle = p.color;
-              ctx.beginPath();
-              ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-              ctx.fill();
+                let frame = 0;
 
-              if (p.life <= 0) particles.splice(i, 1);
-            }
-            ctx.globalAlpha = 1;
+                function animate() {
+                    const width = canvas.clientWidth;
+                    const height = canvas.clientHeight;
 
-            // 애니메이션이 길게 이어지도록 가끔 새 폭죽을 추가합니다.
-            frame++;
-            if (frame % 48 === 0 && frame < 420) launch();
-            requestAnimationFrame(animate);
-          }
-          animate();
+                    ctx.clearRect(0, 0, width, height);
 
-          window.addEventListener("resize", resize);
-        })();
-        </script>
+                    for (let i = particles.length - 1; i >= 0; i--) {
+                        const p = particles[i];
+
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.025;
+                        p.vx *= 0.992;
+                        p.vy *= 0.992;
+                        p.life -= 1;
+
+                        ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+                        ctx.fillStyle = p.color;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        if (p.life <= 0) {
+                            particles.splice(i, 1);
+                        }
+                    }
+
+                    ctx.globalAlpha = 1;
+
+                    // 잠시 동안 추가 폭죽이 나타나도록 합니다.
+                    frame += 1;
+                    if (frame % 48 === 0 && frame < 420) {
+                        launchRandomFirework();
+                    }
+
+                    requestAnimationFrame(animate);
+                }
+
+                animate();
+            </script>
+        </body>
+        </html>
         """,
         height=400,
         scrolling=False,
